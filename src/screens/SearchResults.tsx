@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Alert, FlatList, Dimensions, TextInput, Pressable } from 'react-native';
+import { View, Text, Alert, FlatList, Dimensions, ActivityIndicator } from 'react-native';
 import { apiGetCitiesByName } from '../api/api';
 import ItemCitiesWeather from '../components/ItemCitiesWeather';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -34,26 +34,30 @@ interface ItemCity {
 
 type Props = NativeStackScreenProps<StackParams, "SearchResults">
 
-const SearchResults = ({ navigation }: Props) => {
+const SearchResults = ({ navigation, route }: Props) => {
     const [cities, setCities] = useState<Cities[] | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+ 
 
     useEffect(() => {
         setLoading(true)
-        apiGetCitiesByName("Cordoba").then(res => {
+        let unmount = apiGetCitiesByName(route.params.citySearch).then(res => {
             if (!res.error) {
-                res.data.data.getCityById.forEach((item: { urlIcon: string, weather: { summary: { icon: string } } }) => {
-                    item.urlIcon = `http://openweathermap.org/img/wn/${item.weather.summary.icon}@2x.png`
-                })
-                console.log(res.data.data.getCityById)
-                setCities(res.data.data.getCityById);
+                if (res.data.data.getCityByName) {
+                    res.data.data.getCityByName.urlIcon = `http://openweathermap.org/img/wn/${res.data.data.getCityByName.weather.summary.icon}@2x.png`
+                    setCities([res.data.data.getCityByName]);
+                }
                 setLoading(false)
             } else {
                 Alert.alert("Ocurrió un error al cargar los datos");
                 setLoading(false)
             }
-
         })
+
+        return () => {
+            unmount;
+        }
 
     }, []);
 
@@ -73,13 +77,19 @@ const SearchResults = ({ navigation }: Props) => {
 
     return (
         <View style={{ backgroundColor: '#6998AB', flex: 1 }}>
-            <View style={{ marginTop: 20 }}>
-                <FlatList<Cities>
-                    data={cities}
-                    renderItem={renderItem}
-                    keyExtractor={(item: { id: string; }) => item.id}
-                />
-            </View>
+            {!loading ? 
+                <View style={{ marginTop: 20 }}>
+                    {cities?.length ? <FlatList<Cities>
+                        data={cities}
+                        renderItem={renderItem}
+                        keyExtractor={(item: { id: string; }) => item.id}
+                    /> :
+                        <Text style={{ textAlign: 'center', color: 'white', fontSize: 20 }}>Sin resultados</Text>}
+                </View> :
+                <View style={{marginTop:20}}>
+                    <ActivityIndicator size={50} color="white" />
+                </View>
+            }
         </View>
     );
 }

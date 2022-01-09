@@ -1,22 +1,77 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useEffect, useState } from 'react';
-import { View, Text, Dimensions, Image, StyleSheet } from 'react-native';
+import { View, Text, Dimensions, Image, StyleSheet, Alert } from 'react-native';
 import { StackParams } from '../stacks/HomeStack';
 import { convertKelvinToC } from '../helpers/helpers';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Button } from 'react-native-paper';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { citiesArray } from '../constant';
 
 let { width, height } = Dimensions.get('window');
 
 type Props = NativeStackScreenProps<StackParams, "Details">
 
 const Details = ({ route }: Props) => {
+    const [isFavorite, setIsFavorite] = useState(false);
+    const [isInitialArray, setIsInitalArray] = useState(false);
 
     const { item } = route.params;
-
     console.log(item)
+    const getFavorites = async () => {
+        try {
+            const jsonValue = await AsyncStorage.getItem('favorites')
+            return jsonValue != null ? JSON.parse(jsonValue) : [];
+        } catch (e) {
+            // error reading value
+        }
+    }
+    const addFavorites = async (value: string) => {
+
+        try {
+            let favArr = await getFavorites();
+            favArr.push(value)
+            const jsonValue = JSON.stringify(favArr)
+            await AsyncStorage.setItem('favorites', jsonValue)
+            getVerifFavorites()
+            Alert.alert("Atención","Se agregó a favoritos")
+        } catch (e) {
+            // saving error
+        }
+    }
+
+    const removeFavorite = async (value: string) => {
+        try {
+            let favArr = await getFavorites();
+            const deleted = favArr.filter((item: string) => item != value);
+            const jsonValue = JSON.stringify(deleted)
+            await AsyncStorage.setItem('favorites', jsonValue)
+            getVerifFavorites()
+            Alert.alert("Atención","Se eliminó de favoritos")
+        } catch (e) {
+            // saving error
+        }
+    }
+
+    function getVerifFavorites(){
+        getFavorites().then(favArr => {
+            setIsFavorite(favArr.includes(item.id))
+        });
+    }
+
+    useEffect(() => {
+        let unmount = getVerifFavorites();
+
+        return () => {
+            unmount;
+        }
+
+    }, []);
+
 
     return (
         <View style={{ alignItems: 'center', backgroundColor: '#6998AB', flex: 1 }}>
+
             <View style={{ padding: 10, flexDirection: 'row', backgroundColor: '#B1D0E0', width: width * 0.95, height: height * 0.2, marginTop: 20, borderRadius: 10 }}>
 
                 <View style={styles.box}>
@@ -42,7 +97,7 @@ const Details = ({ route }: Props) => {
                         <Text style={styles.subText}>{convertKelvinToC(item.weather.temperature.feelsLike)}°</Text>
                     </View>
                 </View>
-                <View style={[styles.box,{borderLeftWidth:1,borderRightWidth:1}]}>
+                <View style={[styles.box, { borderLeftWidth: 1, borderRightWidth: 1 }]}>
                     <Text style={{ fontSize: 16 }}>MIN: </Text>
                     <View style={{ flexDirection: 'row', marginTop: 5 }}>
                         <MaterialCommunityIcons
@@ -78,7 +133,7 @@ const Details = ({ route }: Props) => {
                         <Text style={styles.subText}>{item.weather.clouds.humidity}%</Text>
                     </View>
                 </View>
-                <View style={[styles.box,{borderLeftWidth:1,borderRightWidth:1}]}>
+                <View style={[styles.box, { borderLeftWidth: 1, borderRightWidth: 1 }]}>
                     <Text style={{ fontSize: 16 }}>Viento: </Text>
                     <View style={{ flexDirection: 'row', marginTop: 5 }}>
                         <MaterialCommunityIcons
@@ -102,6 +157,19 @@ const Details = ({ route }: Props) => {
                 </View>
 
             </View>
+            {!citiesArray.includes(item.id) ?
+                <Button color={'white'} onPress={() => {
+                    if (isFavorite) {
+                        console.log("aca")
+                        removeFavorite(item.id)
+                    } else {
+                        addFavorites(item.id)
+                    }
+                }
+                }   >
+                    {!isFavorite ? 'Agregar a Favoritos' : 'Eliminar de Favoritos'}
+                </Button>
+                : null}
 
         </View>
     );
@@ -128,9 +196,9 @@ const styles = StyleSheet.create({
         height: height * 0.15,
         marginTop: 20, borderRadius: 10
     },
-    box:{
-        flex: 1, 
-        justifyContent: 'center', 
+    box: {
+        flex: 1,
+        justifyContent: 'center',
         alignItems: 'center'
     }
 

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Alert, FlatList, Dimensions, TextInput, Pressable } from 'react-native';
+import { View, Text, Alert, FlatList, Dimensions, TextInput, Pressable, ActivityIndicator, RefreshControl } from 'react-native';
 import { apiGetCities } from '../api/api';
 import { citiesArray } from '../constant';
 import ItemCitiesWeather from '../components/ItemCitiesWeather';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { StackParams } from '../stacks/HomeStack';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 let { width, height } = Dimensions.get('window');
@@ -40,27 +41,48 @@ type Props = NativeStackScreenProps<StackParams, "Home">
 const Home = ({ navigation }: Props) => {
     const [cities, setCities] = useState<Cities[] | null>(null);
     const [loading, setLoading] = useState(false);
+    const [citySearch, onCitySearch] = useState("");
 
-    //const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
+    const getFavorites = async () => {
+        try {
+            const jsonValue = await AsyncStorage.getItem('favorites')
+            return jsonValue != null ? JSON.parse(jsonValue) : [];
+        } catch (e) {
+            // error reading value
+        }
+    }
 
-    useEffect(() => {
-        setLoading(true)
-        apiGetCities(citiesArray).then(res => {
-            if (!res.error) {
+    async function getAllData() {
+        const favorites = await getFavorites();
+        const allCities = citiesArray.concat(favorites)
+        let res = await apiGetCities(allCities)
+        if (!res.error) {
+            if (res.data.data.getCityById) {
                 res.data.data.getCityById.forEach((item: { urlIcon: string, weather: { summary: { icon: string } } }) => {
                     item.urlIcon = `http://openweathermap.org/img/wn/${item.weather.summary.icon}@2x.png`
                 })
-                console.log(res.data.data.getCityById)
+
+
                 setCities(res.data.data.getCityById);
-                setLoading(false)
-            } else {
-                Alert.alert("Ocurrió un error al cargar los datos");
-                setLoading(false)
             }
 
-        })
+            setLoading(false)
+        } else {
+            Alert.alert("Ocurrió un error al cargar los datos");
+            setLoading(false)
+        }
+    }
 
-    }, []);
+    useEffect(() => {
+        setLoading(true)
+        const unmount = navigation.addListener('focus', () => {
+            getAllData();
+          });
+        return () => {
+            unmount;
+        }
+
+    }, [navigation]);
 
 
 
@@ -79,7 +101,7 @@ const Home = ({ navigation }: Props) => {
     return (
         <View style={{ backgroundColor: '#6998AB', flex: 1 }}>
             <View style={{ marginTop: 20 }}>
-                <View style={{ justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
+                <View style={{ justifyContent: 'center', alignItems: 'center', marginBottom: 20, marginTop:20 }}>
                     <View style={{
                         backgroundColor: '#9DB2BE',
                         width: width * 0.97,
@@ -89,8 +111,8 @@ const Home = ({ navigation }: Props) => {
                         alignItems: 'center',
                         padding: 10
                     }}>
-                        
-                        <TextInput 
+
+                        <TextInput
                             style={{
                                 marginRight: 10,
                                 borderRadius: 10,
@@ -98,30 +120,48 @@ const Home = ({ navigation }: Props) => {
                                 height: 40,
                                 flex: 1,
                                 justifyContent: 'center',
-                            }} 
+                            }}
                             placeholder='Buscar...'
+                            onChangeText={onCitySearch}
                         />
-                        <Pressable onPress={()=> navigation.navigate('SearchResults')} style={{ 
-                                                                                    justifyContent: 'center', 
-                                                                                    alignItems:'center',
-                                                                                    borderRadius:10 ,
-                                                                                    height:40,
-                                                                                    width:40, 
-                                                                                    backgroundColor:'#7c8d96'}}>
+                        <Pressable onPress={() => navigation.navigate('SearchResults', { citySearch })}
+                            style={{
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                borderRadius: 10,
+                                height: 40,
+                                width: 40,
+                                backgroundColor: '#7c8d96'
+                            }}
+                        >
                             <MaterialCommunityIcons
                                 name='magnify'
                                 color={'white'}
                                 size={30}
                             />
                         </Pressable>
-                         
+
                     </View>
                 </View>
-                <FlatList<Cities>
-                    data={cities}
-                    renderItem={renderItem}
-                    keyExtractor={(item: { id: string; }) => item.id}
-                />
+                {!loading ?
+                    <View style={{ marginTop: 0, height:height*0.8 }}>
+                        {cities?.length ? <FlatList<Cities>
+                            data={cities}
+                            renderItem={renderItem}
+                            keyExtractor={(item: { id: string; }) => item.id}
+                            refreshControl={
+                                <RefreshControl
+                                  refreshing={loading}
+                                  onRefresh={getAllData}
+                                />
+                            }
+                        /> :
+                            <Text style={{ textAlign: 'center', color: 'white', fontSize: 20 }}>Sin resultados</Text>}
+                    </View> :
+                    <View style={{ marginTop: 20 }}>
+                        <ActivityIndicator size={50} color="white" />
+                    </View>
+                }
             </View>
         </View>
     );

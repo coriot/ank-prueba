@@ -62,7 +62,7 @@ export async function apiGetCitiesByName(cityName:string){
 
   var data = JSON.stringify({
       query: `query {
-        getCityByName(name:"Cordoba",config:{lang:sp}) {
+        getCityByName(name:"${cityName}",config:{lang:sp}) {
         id
         name
         country
@@ -104,6 +104,7 @@ export async function apiGetCitiesByName(cityName:string){
       data : data
     })
     .then(function (response) {
+      console.log(response.data)
       return {error:false, data:response.data};
     })
     .catch(function (error) {
