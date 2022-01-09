@@ -1,5 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Alert, FlatList, Dimensions, TextInput, Pressable, ActivityIndicator, RefreshControl } from 'react-native';
+import {    View, 
+            Text, 
+            Alert, 
+            FlatList, 
+            Dimensions, 
+            TextInput, 
+            Pressable, 
+            ActivityIndicator, 
+            RefreshControl,
+            StyleSheet
+} from 'react-native';
 import { apiGetCities } from '../api/api';
 import { citiesArray } from '../constant';
 import ItemCitiesWeather from '../components/ItemCitiesWeather';
@@ -52,6 +62,7 @@ const Home = ({ navigation }: Props) => {
         }
     }
 
+    /* Obtengo las ciudades del array inicial y las favoritas */
     async function getAllData() {
         const favorites = await getFavorites();
         const allCities = citiesArray.concat(favorites)
@@ -99,9 +110,9 @@ const Home = ({ navigation }: Props) => {
     }
 
     return (
-        <View style={{ backgroundColor: '#6998AB', flex: 1 }}>
+        <View style={styles.container}>
             <View style={{ marginTop: 20 }}>
-                <View style={{ justifyContent: 'center', alignItems: 'center', marginBottom: 20, marginTop:20 }}>
+                <View style={styles.srchContainer}>
                     <View style={{
                         backgroundColor: '#9DB2BE',
                         width: width * 0.97,
@@ -113,26 +124,12 @@ const Home = ({ navigation }: Props) => {
                     }}>
 
                         <TextInput
-                            style={{
-                                marginRight: 10,
-                                borderRadius: 10,
-                                backgroundColor: 'white',
-                                height: 40,
-                                flex: 1,
-                                justifyContent: 'center',
-                            }}
+                            style={styles.inputSearch}
                             placeholder='Buscar...'
                             onChangeText={onCitySearch}
                         />
                         <Pressable onPress={() => navigation.navigate('SearchResults', { citySearch })}
-                            style={{
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                                borderRadius: 10,
-                                height: 40,
-                                width: 40,
-                                backgroundColor: '#7c8d96'
-                            }}
+                            style={styles.btnSearch}
                         >
                             <MaterialCommunityIcons
                                 name='magnify'
@@ -156,7 +153,7 @@ const Home = ({ navigation }: Props) => {
                                 />
                             }
                         /> :
-                            <Text style={{ textAlign: 'center', color: 'white', fontSize: 20 }}>Sin resultados</Text>}
+                            <Text style={styles.textResult}>Sin resultados</Text>}
                     </View> :
                     <View style={{ marginTop: 20 }}>
                         <ActivityIndicator size={50} color="white" />
@@ -166,5 +163,37 @@ const Home = ({ navigation }: Props) => {
         </View>
     );
 }
+
+
+const styles = StyleSheet.create({
+    container:{ 
+        backgroundColor: '#6998AB', 
+        flex: 1 
+    },
+    srchContainer:{ justifyContent: 'center', 
+        alignItems: 'center', 
+        marginBottom: 20, 
+        marginTop:20 
+    },
+    btnSearch: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 10,
+        height: 40,
+        width: 40,
+        backgroundColor: '#7c8d96'
+    },
+    inputSearch:{
+        marginRight: 10,
+        borderRadius: 10,
+        backgroundColor: 'white',
+        height: 40,
+        flex: 1,
+        justifyContent: 'center',
+    },
+    textResult: { textAlign: 'center', color: 'white', fontSize: 20 }
+
+});
+
 
 export default Home;

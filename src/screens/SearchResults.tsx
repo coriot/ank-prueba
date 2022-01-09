@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Alert, FlatList, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, Alert, FlatList, Dimensions, ActivityIndicator, StyleSheet } from 'react-native';
 import { apiGetCitiesByName } from '../api/api';
 import ItemCitiesWeather from '../components/ItemCitiesWeather';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -76,7 +76,7 @@ const SearchResults = ({ navigation, route }: Props) => {
     }
 
     return (
-        <View style={{ backgroundColor: '#6998AB', flex: 1 }}>
+        <View style={styles.container}>
             {!loading ? 
                 <View style={{ marginTop: 20 }}>
                     {cities?.length ? <FlatList<Cities>
@@ -84,7 +84,7 @@ const SearchResults = ({ navigation, route }: Props) => {
                         renderItem={renderItem}
                         keyExtractor={(item: { id: string; }) => item.id}
                     /> :
-                        <Text style={{ textAlign: 'center', color: 'white', fontSize: 20 }}>Sin resultados</Text>}
+                        <Text style={styles.textResult}>Sin resultados</Text>}
                 </View> :
                 <View style={{marginTop:20}}>
                     <ActivityIndicator size={50} color="white" />
@@ -93,5 +93,14 @@ const SearchResults = ({ navigation, route }: Props) => {
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    container:{ 
+        backgroundColor: '#6998AB', 
+        flex: 1 
+    },
+    textResult: { textAlign: 'center', color: 'white', fontSize: 20 }
+
+});
 
 export default SearchResults;

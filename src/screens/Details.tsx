@@ -14,10 +14,8 @@ type Props = NativeStackScreenProps<StackParams, "Details">
 
 const Details = ({ route }: Props) => {
     const [isFavorite, setIsFavorite] = useState(false);
-    const [isInitialArray, setIsInitalArray] = useState(false);
-
     const { item } = route.params;
-    console.log(item)
+    
     const getFavorites = async () => {
         try {
             const jsonValue = await AsyncStorage.getItem('favorites')
@@ -53,6 +51,8 @@ const Details = ({ route }: Props) => {
         }
     }
 
+
+    /* Verifico si la ciudad estpa en favoritos */
     function getVerifFavorites(){
         getFavorites().then(favArr => {
             setIsFavorite(favArr.includes(item.id))
